@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.Design.Serialization;
 using System.Transactions;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
@@ -10,13 +11,14 @@ public class Bullet : MonoBehaviour
     private Transform target;
 
     public float speed = 70f;
+    public float explosionRadius = 0f;
     public GameObject ImpactEffect;
+    public float damage;
 
     public void Seek(Transform _target)
     {
         target = _target;
     }
-
 
     void Update()
     {
@@ -36,6 +38,7 @@ public class Bullet : MonoBehaviour
         }
 
         transform.Translate(dir.normalized * distanceThisFrame, Space.World);
+        transform.LookAt(target);
     }
 
     void HitTarget()
@@ -43,7 +46,43 @@ public class Bullet : MonoBehaviour
         GameObject effectIns = (GameObject)Instantiate(ImpactEffect, transform.position, transform.rotation);
         Destroy(effectIns, 2f);
 
+        if(explosionRadius >0f)
+        {
+            Explode();
+        }
+        else
+        {
+            Damage(target);
+        }
+
         Destroy(gameObject);
-        Destroy(target.gameObject);
+    }
+
+    void Explode()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius); 
+        foreach(Collider collider in colliders) 
+        {
+            if(collider.tag == "Enemy")
+            {
+                Damage(collider.transform);
+            }
+        }
+    }
+    void Damage(Transform enemy)
+    {
+        enemy aboutEnemy = enemy.GetComponent<enemy>();
+
+        if(aboutEnemy != null) 
+        {
+            aboutEnemy.TakeDamage(damage);
+        }
+        
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, explosionRadius);
     }
 }
